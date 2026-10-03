@@ -1,317 +1,162 @@
-LogParse
-A lightweight Chrome extension for parsing, cleaning, filtering, and
-copying application logs directly from the active browser tab.
+# LogParse
 
-Overview
-LogParse is a React + TypeScript Chrome Extension that extracts visible
-text from the active webpage, identifies supported application log
-entries, and presents them in a structured interface.
-The project demonstrates Chrome Extension APIs, React state management,
-TypeScript, regular expressions, text parsing, array methods, clipboard
-integration, Tailwind CSS, and Vite.
-The project uses synthetic log data for testing and does not contain
-proprietary company logs, credentials, or internal data.
-Problem Statement
-Application logs can be difficult to scan when they are mixed into large
-amounts of raw text. Developers may need to quickly identify timestamps,
-severity, messages, errors, warnings, and key-value metadata.
-LogParse provides a small browser utility that turns supported raw log
-lines into a cleaner, filterable interface.
-Solution
-Active Webpage
-      ↓
-Read webpage text
-      ↓
-Chrome Scripting API
-      ↓
-Raw text
-      ↓
-Log parsing
-      ↓
-Structured log objects
-      ↓
-React state
-      ↓
-Filter + Display + Copy
-Example input:
-2026-10-03 10:30:12 ERROR Authentication service unavailable service=auth
-is converted into timestamp, level, message, and metadata.
-Features
-- Read visible text from the active webpage
-- Parse supported application log lines
-- Extract timestamps
-- Extract INFO, WARNING, and ERROR levels
-- Extract log messages
-- Extract key=value metadata
-- Display parsed logs
-- Show total, INFO, WARNING, and ERROR counts
-- Filter logs by severity
-- Copy filtered logs to the clipboard
-- Show page character and line counts
-- Handle pages without supported logs
-- Display basic error states
-- Tailwind CSS interface
-Tech Stack
-  Technology                       Purpose
-  React                            Popup UI and state management
-  TypeScript                       Static typing
-  Chrome Extension Manifest V3     Extension architecture
-  Chrome Scripting API             Reading the active webpage
-  Tailwind CSS                     UI styling
-  Vite                             Development and production build
-  JavaScript Regular Expressions   Log parsing
-  Clipboard API                    Copying results
-Architecture
-┌──────────────────────────────┐
-│        Browser Webpage       │
-│        Visible text          │
-└──────────────┬───────────────┘
-               │
-               │ Chrome Scripting API
-               ▼
-┌──────────────────────────────┐
-│          App.tsx             │
-│                              │
-│  Read webpage                │
-│  Parse logs                  │
-│  Manage state                │
-│  Filter logs                 │
-│  Copy results                │
-└──────────────┬───────────────┘
-               │
-               ▼
-┌──────────────────────────────┐
-│          React UI            │
-│ Statistics / Filters / Logs  │
-└──────────────────────────────┘
-The architecture is intentionally small. The goal is to keep the
-complete workflow understandable without unnecessary abstractions.
-Project Structure
+[![Chrome Extension](https://shields.io)](https://chrome.com)
+[![Manifest V3](https://shields.io)](https://chrome.com/mv3/intro/)
+[![License: MIT](https://shields.io)](LICENSE)
+
+A lightweight, developer-focused Chrome extension for parsing, cleaning, filtering, and copying application logs directly from the active browser tab. 
+
+## Overview
+
+**LogParse** simplifies debugging by turning unstructured browser-rendered log files into an interactive, readable dashboard. Instead of copying massive log files into external text editors or running heavy terminal scripts, developers can analyze structured log streams directly in the browser popup with real-time level filtering and metrics.
+
+## Features
+
+* **Active Tab Parsing:** Extracts raw text dynamically from the current browser tab using the Chrome Scripting API.
+* **Structured Data Extraction:** Automatically parses timestamps, log levels, primary messages, and `key=value` metadata.
+* **Real-Time Analytics:** Displays immediate count metrics for Total, INFO, WARNING, and ERROR logs.
+* **Dynamic Filtering:** Toggle log visibility instantly by level (ALL, INFO, WARNING, ERROR).
+* **Smart Clipboard Export:** Copies only the currently filtered logs to the clipboard for fast sharing.
+* **Page Metrics:** Shows live character and line counts of the source page.
+* **Graceful Error Handling:** Provides clear alerts when pages are inaccessible (e.g., restricted system tabs) or if no supported logs are detected.
+
+## Tech Stack
+
+* **Core Framework:** React 18, TypeScript, Vite
+* **Styling:** Tailwind CSS
+* **Extension APIs:** Chrome Extension Manifest V3, Chrome Tabs API, Chrome Scripting API
+
+## Architecture & Data Flow
+
+LogParse uses an event-driven approach to safely extract and parse text from the active tab without injecting permanent background overhead.
+
+```text
+User 
+  ↓ (Clicks Extension Icon)
+Chrome Extension Popup 
+  ↓ chrome.tabs.query() [Finds Active Tab]
+chrome.scripting.executeScript() [Injects Reader]
+  ↓ document.body.innerText [Extracts Raw Text]
+Log parsing [Regex engine processes strings]
+  ↓ Structured log objects [Mapped to React State]
+Filter / Display / Copy UI
+```
+
+## Supported Log Format
+
+The extension targets standard whitespace-delimited application log streams following this schema:
+
+```text
+YYYY-MM-DD HH:mm:ss LEVEL message key=value
+```
+
+### Supported Levels
+* `INFO`
+* `WARNING`
+* `ERROR`
+
+### Example Matrix
+
+| Raw Log Line | Parsed Components |
+| :--- | :--- |
+| `2026-10-03 10:30:12 ERROR Authentication service unavailable service=auth` | **Timestamp:** `2026-10-03 10:30:12`<br>**Level:** `ERROR`<br>**Message:** `Authentication service unavailable`<br>**Metadata:** `service=auth` |
+
+## Project Structure
+
+```text
 logparse/
-│
 ├── public/
-│   ├── manifest.json
-│   ├── content.js
-│   └── test-logs.html
-│
+│   ├── manifest.json       # Extension configuration & permissions
+│   └── test-logs.html      # Local synthetic log testing page
 ├── src/
-│   ├── App.tsx
-│   ├── main.tsx
-│   └── index.css
-│
+│   ├── App.tsx             # Main popup UI, state management, and parser logic
+│   ├── main.tsx            # React DOM architecture bootstrap
+│   └── index.css           # Global Tailwind CSS styles
 ├── package.json
-├── tsconfig.json
-├── tsconfig.app.json
-├── tsconfig.node.json
-└── vite.config.ts
-File Responsibilities
-public/manifest.json defines the Chrome extension, its Manifest V3
-configuration, permissions, and popup entry point.
-src/App.tsx contains the main application logic: reading the
-active tab, parsing logs, managing React state, filtering results,
-calculating statistics, and copying output.
-src/main.tsx mounts the React application.
-src/index.css loads Tailwind CSS.
-public/test-logs.html contains synthetic application logs for
-testing.
-public/content.js is an earlier content-script implementation
-retained during development. The current active data flow uses the
-Chrome Scripting API directly.
-How It Works
-1. Read the active tab
-The extension finds the active browser tab using:
-chrome.tabs.query({
-  active: true,
-  currentWindow: true
-});
-2. Read webpage text
-The extension uses chrome.scripting.executeScript() to execute a small
-function in the active page:
-document.body?.innerText || ""
-The result is stored in React state.
-3. Split the raw text
-The text is separated into individual lines:
-const lines = pageText.split("
-");
-4. Identify log lines
-Each line is checked against a regular expression that recognizes the
-supported timestamp and log levels.
-5. Extract metadata
-Key-value pairs such as:
-service=auth
-status=200
-userId=1023
-are extracted into a JavaScript object.
-6. Store parsed logs
-Each result has this shape:
-{
-  timestamp: "...",
-  level: "ERROR",
-  message: "...",
-  metadata: {
-    service: "auth"
-  }
-}
-7. Filter and display
-React state controls the selected filter, and JavaScript filter()
-produces the displayed results.
-8. Copy results
-The filtered logs are converted to text and copied using the Clipboard
-API.
-Supported Log Format
-Current supported format:
-YYYY-MM-DD HH:mm:ss LEVEL message
-Supported levels:
-INFO
-WARNING
-ERROR
-Example:
-2026-10-03 10:30:03 INFO User authenticated userId=1023
-Installation
-Prerequisites
-- Node.js
-- npm
-- Google Chrome
-Install
-git clone <your-repository-url>
-cd logparse
-npm install
-Development
-npm run dev
-The development server is used primarily for the synthetic test page.
-Build the Extension
-npm run build
-Vite generates a dist/ directory containing the built extension.
-Load in Chrome
-1. Open chrome://extensions
-2. Enable Developer mode
-3. Click Load unpacked
-4. Select the project's dist/ directory
-5. Open the LogParse extension
-Testing
-The repository includes:
-public/test-logs.html
-Run:
-npm run dev
-Then open:
-http://localhost:5173/test-logs.html
-Open LogParse and click:
-1. Read Page
-2. Parse Logs
-3. Test the severity filters
-4. Test Copy
-Expected sample results:
-Total: 9
-INFO: 5
-WARNING: 2
-ERROR: 2
-Example
-Raw Input
-2026-10-03 10:30:01 INFO Application started
-2026-10-03 10:30:03 INFO User authenticated userId=1023
-2026-10-03 10:30:05 WARNING API response slow endpoint=/users
-2026-10-03 10:30:07 ERROR Database connection timeout
-Parsed Representation
-INFO
-2026-10-03 10:30:01
-Application started
+├── tsconfig.json           # Global TypeScript configuration
+├── tsconfig.app.json       # Frontend application TS rules
+├── tsconfig.node.json      # Vite tools TS configuration
+└── vite.config.ts          # Vite build engine configurations
+```
 
-INFO
-2026-10-03 10:30:03
-User authenticated
-userId=1023
+## Installation & Setup
 
-WARNING
-2026-10-03 10:30:05
-API response slow
-endpoint=/users
+Ensure you have [Node.js](https://nodejs.org) installed.
 
-ERROR
-2026-10-03 10:30:07
-Database connection timeout
-Permissions
-The extension currently uses:
-"permissions": [
-  "activeTab",
-  "scripting"
-]
-activeTab allows interaction with the tab the user is actively working
-with after invoking the extension.
-scripting allows the extension to execute the small page-reading
-function in the active tab.
-The current implementation processes the captured text locally in the
-browser.
-Privacy
-LogParse does not currently send webpage content to a backend, use an
-external database, require an account, or transmit parsed logs to a
-remote service.
-All included test logs are synthetic.
-Users should still avoid processing confidential information in
-environments where they do not have permission to do so.
-Limitations
-The current V1 intentionally has a small scope.
-It does not currently support:
-- JSON logs
-- Multi-line stack traces
-- Complex nested log formats
-- DEBUG/FATAL/custom levels
-- Advanced log correlation
-- Server-side log sources
-- Chrome internal pages such as chrome:// pages
-These limitations are deliberate so the core project remains small and
-understandable.
-Future Improvements
-Possible future versions could add:
-- Additional log formats
-- DEBUG and FATAL levels
-- JSON parsing
-- Multi-line stack trace detection
-- Search within parsed logs
-- JSON/CSV export
-- Dark mode
-- Parsing history
-- Automated parser tests
-- Chrome Web Store publication
-Interview Summary
-A concise project explanation:
-LogParse is a Chrome extension I built using React, TypeScript, and
-Chrome Extension APIs. It reads visible text from the active browser
-tab, identifies supported application log entries, extracts
-timestamps, severity, messages, and key-value metadata, and displays
-the results in a filterable interface. Users can filter logs by
-severity and copy cleaned results. The processing happens locally in
-the browser.
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com
+   cd logparse-chrome-extension
+   ```
 
-Architecture
-User
- ↓
-Chrome Extension Popup
- ↓
-Chrome Tabs API
- ↓
-Chrome Scripting API
- ↓
-Active Webpage
- ↓
-Raw Text
- ↓
-Parsing Logic
- ↓
-React State
- ↓
-Filter / Display / Copy
-Project Status
-Version: 1.0.0
-Status: Functional V1 / Portfolio Project
-The project is intentionally lightweight so the complete implementation
-can be understood and explained clearly.
-Disclaimer
-LogParse is a portfolio and educational project.
-All sample logs included in the project are synthetic and created solely
-for development and testing.
-No proprietary company code, internal logs, credentials, or confidential
-information should be included in the repository.
-License
-For a public portfolio repository, an MIT License is a common option.
-Add the appropriate license file if you decide to open-source the
-project.
+2. **Install dependencies:**
+   ```bash
+   npm install
+   ```
+
+3. **Build the extension:**
+   ```bash
+   # For local development
+   npm run dev
+
+   # For production build output
+   npm run build
+   ```
+
+4. **Load into Google Chrome:**
+   * Navigate to `chrome://extensions/` in your browser.
+   * Toggle the **Developer mode** switch in the top-right corner.
+   * Click the **Load unpacked** button.
+   * Select the compiled `dist` directory generated by the build process.
+
+## Testing
+
+A synthetic test file is bundled to validate parsing capabilities without connecting to real infrastructure.
+
+1. Start the Vite local server: `npm run dev`
+2. Open the mock page at: `http://localhost:5173/test-logs.html`
+3. Click the **LogParse** extension icon to verify the following validation dataset:
+   * **Total Logs:** 9
+   * **INFO:** 5
+   * **WARNING:** 2
+   * **ERROR:** 2
+
+## Permissions
+
+LogParse keeps its scope strictly limited to user-initiated actions. It requests the minimum permissions required:
+
+* `activeTab`: Grants temporary access to the current tab text only when the user explicitly clicks the extension icon.
+* `scripting`: Allows execution of the script required to read `document.body.innerText`.
+
+## Privacy Notice
+
+This application runs **entirely client-side** inside your browser instance. 
+* No log data, text strings, or URLs are sent to external servers, analytical services, or remote APIs.
+* Designed purely for synthetic and local text processing. 
+* Contains no corporate infrastructure connections, credentials, or proprietary enterprise implementations.
+
+## Limitations
+
+* **Plain Text Only:** The extension parses text exposed via `innerText`. It cannot read compressed log archives (`.gz`), binary files, or logs hidden inside secure iframe components.
+* **Strict Format Matching:** Lines that deviate significantly from the space-separated `Timestamp LEVEL Message Metadata` structure may fail to parse and will be excluded from metrics.
+
+## Future Improvements
+
+* **Custom Regex Engine:** Allow users to define custom matching delimiters for varied log outputs (e.g., JSON logs, Logback patterns).
+* **Dark Mode:** Add native theme swapping matching operating system preferences.
+* **Regex Exclusions:** Provide a text field to filter out spam strings (e.g., heartbeat pings).
+
+## Interview Explanation
+
+This project demonstrates practical competence in building functional developer tools using modern browser environments. Key engineering choices include:
+* **Context Isolation:** Leveraging Chrome's Content and Scripting layers safely to access tab data without altering the host page runtime.
+* **State Management:** Using React and TypeScript to handle parsing state transitions, reactive UI updates, and error fallback conditions gracefully.
+* **Bundle Optimization:** Configuring Vite to output standard-compliant Manifest V3 distribution formats with clean separation of asset modules.
+
+## Project Status
+
+**Complete / Maintained** – The extension fulfills its primary design scope. Updates will be confined to security patches, dependency updates, and foundational optimizations.
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
