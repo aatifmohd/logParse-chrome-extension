@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    />
+
+    <title>LogParse Test Logs</title>
+
+    <style>
+      body {
+        margin: 0;
+        padding: 40px;
+        background: #f4f4f5;
+        font-family: Arial, sans-serif;
+      }
+
+      .container {
+        max-width: 900px;
+        margin: auto;
+        background: white;
+        padding: 30px;
+        border-radius: 12px;
+      }
+
+      pre {
+        padding: 20px;
+        background: #18181b;
+        color: #e4e4e7;
+        border-radius: 8px;
+        line-height: 1.8;
+        overflow-x: auto;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container">
+      <h1>Application Logs</h1>
+
+      <p>
+        Synthetic logs for testing the LogParse extension.
+      </p>
+
+      <pre>
+2026-10-03 10:30:01 INFO Application started
+2026-10-03 10:30:03 INFO User authenticated userId=1023
+2026-10-03 10:30:05 WARNING API response slow endpoint=/users
+2026-10-03 10:30:07 ERROR Database connection timeout
+2026-10-03 10:30:09 INFO Retrying database connection
+2026-10-03 10:30:12 ERROR Authentication service unavailable service=auth
+2026-10-03 10:30:15 INFO Request completed status=200
+2026-10-03 10:30:18 WARNING Memory usage above threshold usage=87%
+2026-10-03 10:30:20 INFO Health check completed status=200
+      </pre>
+    </div>
+  </body>
+</html>

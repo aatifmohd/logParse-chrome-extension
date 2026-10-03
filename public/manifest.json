@@ -1,0 +1,13 @@
+{
+  "manifest_version": 3,
+  "name": "LogParse",
+  "version": "1.0.0",
+  "description": "A Chrome extension for parsing and cleaning application logs.",
+  "permissions": [
+    "activeTab",
+    "scripting"
+  ],
+  "action": {
+    "default_popup": "index.html"
+  }
+}
